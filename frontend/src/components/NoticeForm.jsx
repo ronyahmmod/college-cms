@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { toast } from 'react-toastify';
 
 function NoticeForm({ onNoticeAdded }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [files, setFiles] = useState([]);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleFileChange = (e) => {
     const selectedFiles = e.target.files;
@@ -12,6 +14,7 @@ function NoticeForm({ onNoticeAdded }) {
     for (let i = 0; i < selectedFiles.length; i++) {
       if (selectedFiles[i].size > maxSize) {
         setError('File too large. Maximum size is 10MB.');
+        toast.error('File too large. Maximum size is 10MB.');
         return;
       }
     }
@@ -25,6 +28,7 @@ function NoticeForm({ onNoticeAdded }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const formData = new FormData();
     formData.append('title', title);
     formData.append('content', content);
@@ -54,38 +58,44 @@ function NoticeForm({ onNoticeAdded }) {
       setContent('');
       setFiles([]);
       setError(null);
+      setLoading(false);
+      toast.success('Notice added successfully!');
     } catch (err) {
       console.error('Error adding notice:', err);
       setError(err.message);
+      setLoading(false);
+      toast.error(err.message);
     }
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow mb-6">
-      <h3 className="text-lg font-bold mb-4">Add New Notice</h3>
+    <div className="bg-white p-6 mb-6 border border-gray-200">
+      <h3 className="text-lg font-semibold mb-4 text-primary">
+        Add New Notice
+      </h3>
       {error && <p className="text-red-500 mb-4">{error}</p>}
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
-          <label className="block text-gray-700">Title</label>
+          <label className="block text-secondary mb-1">Title</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="input input-bordered w-full"
             required
           />
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700">Content</label>
+          <label className="block text-secondary mb-1">Content</label>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="textarea textarea-bordered w-full"
             required
           ></textarea>
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700">
+          <label className="block text-secondary mb-1">
             Attachments (Images or PDFs, max 10MB)
           </label>
           <input
@@ -93,14 +103,15 @@ function NoticeForm({ onNoticeAdded }) {
             multiple
             accept="image/*,application/pdf"
             onChange={handleFileChange}
-            className="w-full p-2 border rounded"
+            className="file-input file-input-bordered w-full"
           />
         </div>
         <button
           type="submit"
-          className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+          className="btn bg-primary text-white w-full"
+          disabled={loading}
         >
-          Add Notice
+          {loading ? 'Adding...' : 'Add Notice'}
         </button>
       </form>
     </div>
