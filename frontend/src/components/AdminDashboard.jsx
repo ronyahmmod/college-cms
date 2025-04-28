@@ -46,6 +46,18 @@ function AdminDashboard() {
     setNotices([newNotice, ...notices]);
   };
 
+  const handleDeleteNotice = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:4000/api/notices/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete notice');
+    } catch (err) {
+      console.error('Delete error:', err);
+      setError(err.message);
+    }
+  };
+
   if (loading) return <div className="text-center p-6">Loading...</div>;
   if (error)
     return <div className="text-center p-6 text-red-500">Error: {error}</div>;
@@ -79,6 +91,43 @@ function AdminDashboard() {
               <p className="text-sm text-gray-500">
                 Posted on: {new Date(notice.date).toLocaleDateString()}
               </p>
+              {notice.attachments && notice.attachments.length > 0 && (
+                <div className="mt-2">
+                  <p className="font-semibold">Attachments:</p>
+                  {notice.attachments.map((attachment, index) => (
+                    <div key={index} className="mt-1">
+                      {attachment.type === 'image' ? (
+                        <a
+                          href={attachment.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <img
+                            src={attachment.url}
+                            alt="Attachment"
+                            className="w-32 h-32 object-cover rounded"
+                          />
+                        </a>
+                      ) : (
+                        <a
+                          href={attachment.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          View PDF
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button
+                onClick={() => handleDeleteNotice(notice._id)}
+                className="mt-2 bg-red-600 text-white p-2 rounded hover:bg-red-700"
+              >
+                Delete Notice
+              </button>
             </div>
           ))}
         </div>
