@@ -1,22 +1,38 @@
 import { useState, useEffect } from 'react';
 import Navbar from './Navbar';
 import { toast } from 'react-toastify';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Autoplay } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
 
 function HomePage() {
   const [notices, setNotices] = useState([]);
+  const [carousel, setCarousel] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchNotices = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:4000/api/notices');
-        if (!response.ok) {
+        const noticeResponse = await fetch('http://localhost:4000/api/notices');
+        if (!noticeResponse.ok) {
           throw new Error('Failed to fetch notices');
         }
-        const data = await response.json();
-        console.log('Fetched notices:', data);
-        setNotices(data);
+        const noticeData = await noticeResponse.json();
+        console.log('Fetched notices:', noticeData);
+
+        const carouselResponse = await fetch(
+          'http://localhost:4000/api/carousel'
+        );
+        if (!carouselResponse.ok) {
+          throw new Error('Failed to fetch carousel');
+        }
+        const carouselData = await carouselResponse.json();
+        console.log('Fetched carousel:', carouselData);
+
+        setNotices(noticeData);
+        setCarousel(carouselData);
         setLoading(false);
       } catch (err) {
         console.error('Fetch error:', err);
@@ -26,7 +42,7 @@ function HomePage() {
       }
     };
 
-    fetchNotices();
+    fetchData();
   }, []);
 
   if (loading) return <div className="text-center p-6">Loading...</div>;
@@ -39,6 +55,33 @@ function HomePage() {
         <h1 className="text-2xl font-semibold">Welcome to Our College</h1>
         <p className="mt-2">Your gateway to knowledge and excellence</p>
       </header>
+      {carousel.length > 0 && (
+        <section className="mb-6">
+          <Swiper
+            modules={[Navigation, Autoplay]}
+            navigation
+            autoplay={{ delay: 5000 }}
+            loop={true}
+            className="w-full h-64"
+          >
+            {carousel.map((item) => (
+              <SwiperSlide key={item._id}>
+                <div className="relative w-full h-64">
+                  <img
+                    src={item.image.url}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute bottom-0 left-0 bg-black bg-opacity-50 text-white p-4 w-full">
+                    <h3 className="text-lg font-semibold">{item.title}</h3>
+                    {item.caption && <p className="text-sm">{item.caption}</p>}
+                  </div>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </section>
+      )}
       <main className="p-6 max-w-7xl mx-auto">
         <section className="mb-6">
           <h2 className="text-xl font-semibold mb-4 text-primary">About Us</h2>

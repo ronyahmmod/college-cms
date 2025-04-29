@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import CourseForm from './CourseForm';
 import NoticeForm from './NoticeForm';
+import CarouselForm from './CarouselForm';
 import Navbar from './Navbar';
 import { toast } from 'react-toastify';
 
 function AdminDashboard() {
   const [courses, setCourses] = useState([]);
   const [notices, setNotices] = useState([]);
+  const [carousel, setCarousel] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -21,9 +23,17 @@ function AdminDashboard() {
         if (!noticeResponse.ok) throw new Error('Failed to fetch notices');
         const noticeData = await noticeResponse.json();
 
+        const carouselResponse = await fetch(
+          'http://localhost:4000/api/carousel'
+        );
+        if (!carouselResponse.ok) throw new Error('Failed to fetch carousel');
+        const carouselData = await carouselResponse.json();
+
         console.log('Fetched notices:', noticeData);
+        console.log('Fetched carousel:', carouselData);
         setCourses(courseData);
         setNotices(noticeData);
+        setCarousel(carouselData);
         setLoading(false);
       } catch (err) {
         console.error('Fetch error:', err);
@@ -45,10 +55,18 @@ function AdminDashboard() {
     setNotices([newNotice, ...notices]);
   };
 
+  const handleCarouselAdded = (newCarousel) => {
+    setCarousel([newCarousel, ...carousel]);
+  };
+
   const handleDeleteNotice = async (id) => {
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:4000/api/notices/${id}`, {
         method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -57,6 +75,29 @@ function AdminDashboard() {
       console.log('Notice deleted:', id);
       setNotices(notices.filter((notice) => notice._id !== id));
       toast.success('Notice deleted successfully!');
+    } catch (err) {
+      console.error('Delete error:', err);
+      setError(err.message);
+      toast.error(err.message);
+    }
+  };
+
+  const handleDeleteCarousel = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:4000/api/carousel/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete carousel image');
+      }
+      console.log('Carousel deleted:', id);
+      setCarousel(carousel.filter((item) => item._id !== id));
+      toast.success('Carousel image deleted successfully!');
     } catch (err) {
       console.error('Delete error:', err);
       setError(err.message);
@@ -76,6 +117,7 @@ function AdminDashboard() {
         </h2>
         <CourseForm onCourseAdded={handleCourseAdded} />
         <NoticeForm onNoticeAdded={handleNoticeAdded} />
+        <CarouselForm onCarouselAdded={handleCarouselAdded} />
         <h2 className="text-xl font-semibold mb-6 text-primary">Course List</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           {courses.map((course) => (
@@ -87,6 +129,35 @@ function AdminDashboard() {
                 {course.code}: {course.name}
               </h3>
               <p className="text-secondary">{course.description}</p>
+            </div>
+          ))}
+        </div>
+        <h2 className="text-xl font-semibold mb-6 text-primary">
+          Carousel Images
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          {carousel.map((item) => (
+            <div key={item._id} className="bg-white p-4 border border-gray-200">
+              <img
+                src={item.image.url}
+                alt={item.title}
+                className="w-full h-32 object-cover mb-2"
+              />
+              <h3 className="text-lg font-semibold text-primary">
+                {item.title}
+              </h3>
+              <p className="text-secondary">{item.caption || 'No caption'}</p>
+              <p className="text-sm text-secondary">
+                Added on: {new Date(item.createdAt).toLocaleDateString()}
+              </p>
+              <div className="mt-4">
+                <button
+                  onClick={() => handleDeleteCarousel(item._id)}
+                  className="btn bg-red-500 text-white btn-sm"
+                >
+                  Delete Image
+                </button>
+              </div>
             </div>
           ))}
         </div>
